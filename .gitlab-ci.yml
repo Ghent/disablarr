@@ -1,0 +1,89 @@
+# Disablarr CI Pipeline
+# Stages run in order; a failure in an earlier stage stops later stages.
+stages:
+  - quality
+  - build
+
+variables:
+  GO_VERSION: "1.24.0"
+  NODE_VERSION: "22"
+  GOLANGCI_LINT_VERSION: "v2.1.2"
+  # Cache Go module downloads and build cache across jobs
+  GOPATH: "$CI_PROJECT_DIR/.cache/go"
+  GOMODCACHE: "$CI_PROJECT_DIR/.cache/go/pkg/mod"
+  GOCACHE: "$CI_PROJECT_DIR/.cache/go/build"
+
+# Shared cache config — reuse downloaded modules across all jobs
+.go_cache: &go_cache
+  cache:
+    key: "go-modules-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/go/pkg/mod
+      - .cache/go/build
+
+# ─────────────────────────────────────────────
+# Quality Stage
+# ─────────────────────────────────────────────
+
+fmt:
+  stage: quality
+  image: golang:${GO_VERSION}-alpine
+  <<: *go_cache
+  script:
+    - |
+      unformatted=$(gofmt -l .)
+      if [ -n "$unformatted" ]; then
+        echo "The following files need formatting (run 'gofmt -w .'):"
+        echo "$unformatted"
+        exit 1
+      fi
+      echo "All files are properly formatted."
+
+lint:
+  stage: quality
+  image: golang:${GO_VERSION}-alpine
+  <<: *go_cache
+  before_script:
+    - apk add --no-cache curl
+    - |
+      curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+        | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+  script:
+    - golangci-lint run ./...
+
+vuln:
+  stage: quality
+  image: golang:${GO_VERSION}-alpine
+  <<: *go_cache
+  before_script:
+    - go install golang.org/x/vuln/cmd/govulncheck@latest
+  script:
+    - govulncheck ./...
+
+# ─────────────────────────────────────────────
+# Build Stage
+# ─────────────────────────────────────────────
+
+build:
+  stage: build
+  image: golang:${GO_VERSION}-alpine
+  <<: *go_cache
+  cache:
+    key: "all-deps-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/go/pkg/mod
+      - .cache/go/build
+      - web/node_modules
+  before_script:
+    - apk add --no-cache git nodejs npm
+    # Build frontend
+    - cd web && npm ci && npm run build && cd ..
+    - rm -rf internal/web/dist
+    - cp -r web/dist internal/web/dist
+  script:
+    - CGO_ENABLED=0 go build -ldflags="-s -w" -o disablarr .
+  artifacts:
+    name: "disablarr-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - disablarr
+    expire_in: 7 days
