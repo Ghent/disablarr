@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as Switch from '@radix-ui/react-switch';
-import { Save, Loader2, Check, Palette } from 'lucide-react';
+import { Save, Loader2, Check, Palette, Moon, Sun, Monitor } from 'lucide-react';
 import { api } from '../api/client';
 import { useTheme } from '../components/ThemeContext';
 
@@ -14,9 +14,10 @@ const TUI_THEMES = [
     { name: 'base', label: 'Base', colors: ['#00cc99', '#66ccff', '#1a1a1a'] },
 ];
 
-const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+const fadeUp = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 20 } },
 };
 
 export default function SettingsPage() {
@@ -28,7 +29,7 @@ export default function SettingsPage() {
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState('');
     const [loadError, setLoadError] = useState('');
-    const { theme: webTheme, setTheme: setWebTheme, themes: webThemes } = useTheme();
+    const { theme: webTheme, setTheme: setWebTheme, colorMode, setColorMode, themes: webThemes } = useTheme();
 
     async function fetchSettings() {
         setLoadError('');
@@ -39,7 +40,7 @@ export default function SettingsPage() {
             setTuiTheme(s.themeName);
             setDryRun(s.dryRun);
         } catch (err) {
-            setLoadError(err.message || 'Failed to load settings. Is the server running?');
+            setLoadError(err.message || 'Failed to load settings.');
         }
     }
 
@@ -51,17 +52,11 @@ export default function SettingsPage() {
             setError('Interval must be at least 1 minute');
             return;
         }
-
         setSaving(true);
         setError('');
         setSaved(false);
-
         try {
-            await api.updateSettings({
-                intervalMinutes: mins,
-                themeName: tuiTheme,
-                dryRun,
-            });
+            await api.updateSettings({ intervalMinutes: mins, themeName: tuiTheme, dryRun });
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (err) {
@@ -72,233 +67,162 @@ export default function SettingsPage() {
     }
 
     if (!settings && !loadError) {
-        return (
-            <div className="page" style={{ textAlign: 'center', color: 'var(--text-tertiary)', paddingTop: 'var(--space-2xl)' }}>
-                Loading settings...
-            </div>
-        );
+        return <div className="p-12 text-center text-muted-foreground animate-pulse">Loading settings...</div>;
     }
 
     if (loadError) {
         return (
-            <div className="page" style={{ textAlign: 'center', paddingTop: 'var(--space-2xl)' }}>
-                <div style={{
-                    display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)',
-                    padding: 'var(--space-xl)', background: 'rgba(248, 113, 113, 0.08)',
-                    border: '1px solid rgba(248, 113, 113, 0.3)', borderRadius: 'var(--radius-lg)',
-                }}>
-                    <p style={{ color: 'var(--status-error)', fontSize: '0.9375rem' }}>{loadError}</p>
-                    <button className="btn btn-secondary" onClick={fetchSettings}>Retry</button>
+            <div className="p-12 text-center">
+                <div className="inline-flex flex-col items-center gap-4 p-6 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <p className="text-destructive font-medium">{loadError}</p>
+                    <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 transition-colors" onClick={fetchSettings}>
+                        Retry
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <h1 className="page-title">Settings</h1>
-                <p className="page-subtitle">Configure engine behavior and appearance</p>
+        <div className="flex flex-col gap-6 max-w-3xl">
+            <div data-slot="page-header" className="mb-2">
+                <h1 className="text-3xl font-bold tracking-tight mb-2">Settings</h1>
+                <p className="text-muted-foreground">Configure engine behavior and appearance</p>
             </div>
 
-            <motion.div
-                initial="hidden"
-                animate="show"
-                variants={{ show: { transition: { staggerChildren: 0.08 } } }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)', maxWidth: 640 }}
-            >
+            <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col gap-6">
+
                 {/* Interval */}
-                <motion.div variants={itemVariants} className="glass-card" style={{ padding: 'var(--space-lg)' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>
-                        Run Interval
-                    </h3>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>
-                        How often the engine checks your integrations (in minutes)
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                        <input
-                            className="input"
-                            type="number"
-                            min="1"
-                            value={interval}
-                            onChange={(e) => setInterval(e.target.value)}
-                            style={{ width: 120 }}
-                        />
-                        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>minutes</span>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        gap: 'var(--space-xs)',
-                        marginTop: 'var(--space-md)',
-                    }}>
-                        {[5, 10, 15, 30, 60].map((v) => (
-                            <motion.button
-                                key={v}
-                                className={`btn ${String(v) === interval ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => setInterval(String(v))}
-                                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                {v}m
-                            </motion.button>
-                        ))}
+                <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground">
+                    <h3 className="text-lg font-semibold leading-none tracking-tight mb-2">Run Interval</h3>
+                    <p className="text-sm text-muted-foreground mb-6">How often the engine checks your integrations (in minutes)</p>
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                            <input
+                                className="flex h-9 w-[120px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                type="number"
+                                min="1"
+                                value={interval}
+                                onChange={(e) => setInterval(e.target.value)}
+                            />
+                            <span className="text-sm text-muted-foreground">minutes</span>
+                        </div>
+                        <div className="flex gap-2">
+                            {[5, 10, 15, 30, 60].map((v) => (
+                                <button
+                                    key={v}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                        String(v) === interval
+                                            ? 'bg-primary text-primary-foreground shadow-sm hover:brightness-105'
+                                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                    }`}
+                                    onClick={() => setInterval(String(v))}
+                                >
+                                    {v}m
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </motion.div>
 
                 {/* Dry Run Toggle */}
-                <motion.div variants={itemVariants} className="glass-card" style={{ padding: 'var(--space-lg)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>
-                                Dry Run Mode
-                            </h3>
-                            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                When enabled, the engine logs what it <em>would</em> do without making changes
-                            </p>
-                        </div>
-                        <Switch.Root
-                            className="switch-root"
-                            checked={dryRun}
-                            onCheckedChange={setDryRun}
+                <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground flex items-start justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold leading-none tracking-tight mb-2">Dry Run Mode</h3>
+                        <p className="text-sm text-muted-foreground">When enabled, the engine logs what it <em>would</em> do without making changes</p>
+                    </div>
+                    <Switch.Root
+                        className="peer inline-flex h-[20px] w-[36px] shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
+                        checked={dryRun}
+                        onCheckedChange={setDryRun}
+                    >
+                        <Switch.Thumb className="pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0" />
+                    </Switch.Root>
+                </motion.div>
+
+                {/* Web UI Appearance (Light/Dark mode) */}
+                <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground">
+                    <h3 className="text-lg font-semibold leading-none tracking-tight mb-2 flex items-center gap-2">
+                        Appearance
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-6">Light or dark interface</p>
+                    <div className="grid grid-cols-2 gap-4 max-w-sm">
+                        <button
+                            onClick={() => setColorMode('light')}
+                            className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${colorMode === 'light' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:bg-accent'}`}
                         >
-                            <Switch.Thumb className="switch-thumb" />
-                        </Switch.Root>
+                            <Sun className={`mb-2 ${colorMode === 'light' ? 'text-primary' : 'text-muted-foreground'}`} size={24} />
+                            <span className={`text-sm font-medium ${colorMode === 'light' ? 'text-foreground' : 'text-muted-foreground'}`}>Light</span>
+                        </button>
+                        <button
+                            onClick={() => setColorMode('dark')}
+                            className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${colorMode === 'dark' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:bg-accent'}`}
+                        >
+                            <Moon className={`mb-2 ${colorMode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} size={24} />
+                            <span className={`text-sm font-medium ${colorMode === 'dark' ? 'text-foreground' : 'text-muted-foreground'}`}>Dark</span>
+                        </button>
                     </div>
                 </motion.div>
 
-                {/* Web UI Theme */}
-                <motion.div variants={itemVariants} className="glass-card" style={{ padding: 'var(--space-lg)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xs)' }}>
-                        <Palette size={18} style={{ color: 'var(--accent-1)' }} />
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Web UI Theme</h3>
-                    </div>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>
-                        Visual theme for the web interface (applied instantly)
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-sm)' }}>
+                {/* Web UI Theme Color */}
+                <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground">
+                    <h3 className="text-lg font-semibold leading-none tracking-tight mb-2 flex items-center gap-2">
+                        <Palette size={18} className="text-primary" /> Accent Color
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-6">Choose an accent color for the web interface</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                         {webThemes.map((t) => (
-                            <motion.button
+                            <button
                                 key={t.id}
                                 onClick={() => setWebTheme(t.id)}
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    padding: '12px 8px',
-                                    background: webTheme === t.id ? 'rgba(56, 189, 248, 0.08)' : 'var(--bg-primary)',
-                                    border: `2px solid ${webTheme === t.id ? 'var(--accent-1)' : 'var(--border-default)'}`,
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
-                                    transition: 'all 150ms ease',
-                                }}
+                                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg transition-all ${webTheme === t.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:bg-accent'}`}
                             >
-                                <div style={{ display: 'flex', gap: 3 }}>
-                                    {t.preview.map((c, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                width: 16,
-                                                height: 16,
-                                                borderRadius: '50%',
-                                                background: c,
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                                <span style={{
-                                    fontSize: '0.75rem',
-                                    color: webTheme === t.id ? 'var(--accent-1)' : 'var(--text-secondary)',
-                                    fontWeight: webTheme === t.id ? 600 : 400,
-                                }}>
-                                    {t.label}
-                                </span>
-                            </motion.button>
+                                <div className="w-6 h-6 rounded-full shadow-sm" style={{ background: t.preview[0] }} />
+                                <span className={`text-xs font-medium ${webTheme === t.id ? 'text-primary' : 'text-muted-foreground'}`}>{t.label}</span>
+                            </button>
                         ))}
                     </div>
                 </motion.div>
 
                 {/* TUI Theme */}
-                <motion.div variants={itemVariants} className="glass-card" style={{ padding: 'var(--space-lg)' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>
-                        SSH Theme
+                <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground">
+                    <h3 className="text-lg font-semibold leading-none tracking-tight mb-2 flex items-center gap-2">
+                        <Monitor size={18} className="text-primary" /> SSH Theme
                     </h3>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>
-                        Theme for the SSH terminal UI
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-sm)' }}>
+                    <p className="text-sm text-muted-foreground mb-6">Theme for the SSH terminal UI</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {TUI_THEMES.map((t) => (
-                            <motion.button
+                            <button
                                 key={t.name}
                                 onClick={() => setTuiTheme(t.name)}
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    padding: '12px 8px',
-                                    background: tuiTheme === t.name ? 'rgba(56, 189, 248, 0.08)' : 'var(--bg-primary)',
-                                    border: `2px solid ${tuiTheme === t.name ? 'var(--accent-1)' : 'var(--border-default)'}`,
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
-                                    transition: 'all 150ms ease',
-                                }}
+                                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg transition-all ${tuiTheme === t.name ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:bg-accent'}`}
                             >
-                                <div style={{ display: 'flex', gap: 3 }}>
+                                <div className="flex -space-x-1">
                                     {t.colors.map((c, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                width: 16,
-                                                height: 16,
-                                                borderRadius: '50%',
-                                                background: c,
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                            }}
-                                        />
+                                        <div key={i} className="w-4 h-4 rounded-full border border-background shadow-sm z-10" style={{ background: c }} />
                                     ))}
                                 </div>
-                                <span style={{
-                                    fontSize: '0.75rem',
-                                    color: tuiTheme === t.name ? 'var(--accent-1)' : 'var(--text-secondary)',
-                                    fontWeight: tuiTheme === t.name ? 600 : 400,
-                                }}>
-                                    {t.label}
-                                </span>
-                            </motion.button>
+                                <span className={`text-xs font-medium ${tuiTheme === t.name ? 'text-primary' : 'text-muted-foreground'}`}>{t.label}</span>
+                            </button>
                         ))}
                     </div>
                 </motion.div>
 
-                {/* Error + Save */}
+                {/* Error Box */}
                 {error && (
-                    <div style={{
-                        padding: 'var(--space-sm) var(--space-md)',
-                        background: 'rgba(248, 113, 113, 0.1)',
-                        border: '1px solid rgba(248, 113, 113, 0.3)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--status-error)',
-                        fontSize: '0.8125rem',
-                    }}>
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-4 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg font-medium">
                         {error}
-                    </div>
+                    </motion.div>
                 )}
 
+                {/* Save Button */}
                 <motion.button
-                    className="btn btn-primary"
+                    data-slot="button"
+                    className="inline-flex items-center justify-center gap-2 self-start px-6 py-2.5 text-sm font-medium rounded-md bg-primary text-primary-foreground shadow-sm hover:brightness-105 active:scale-95 transition-all disabled:opacity-50"
                     onClick={handleSave}
                     disabled={saving}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{ alignSelf: 'flex-start', padding: '10px 24px' }}
                 >
-                    {saving ? <Loader2 size={16} /> : saved ? <Check size={16} /> : <Save size={16} />}
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : <Save size={16} />}
                     {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
                 </motion.button>
             </motion.div>

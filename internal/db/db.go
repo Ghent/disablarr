@@ -60,6 +60,13 @@ func (db *DB) initSchema() error {
 	defer cancel()
 
 	schema := `
+	CREATE TABLE IF NOT EXISTS schema_info (
+		family TEXT PRIMARY KEY,
+		version INTEGER NOT NULL
+	);
+
+	INSERT OR IGNORE INTO schema_info (family, version) VALUES ('disablarr', 1);
+
 	CREATE TABLE IF NOT EXISTS settings (
 		id INTEGER PRIMARY KEY CHECK (id = 1),
 		interval_minutes INTEGER NOT NULL DEFAULT 15

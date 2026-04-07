@@ -26,183 +26,88 @@ export default function LoginPage() {
     }
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            padding: 'var(--space-lg)',
-            position: 'relative',
-            overflow: 'hidden',
-        }}>
-            {/* Animated ambient orbs */}
-            <div className="ambient-bg">
-                <motion.div
-                    className="ambient-orb"
-                    animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
-                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{
-                        top: '15%',
-                        left: '25%',
-                        width: 400,
-                        height: 400,
-                        background: 'radial-gradient(circle, var(--accent-glow), transparent 70%)',
-                    }}
-                />
-                <motion.div
-                    className="ambient-orb"
-                    animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{
-                        bottom: '10%',
-                        right: '15%',
-                        width: 500,
-                        height: 500,
-                        background: `radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%)`,
-                    }}
-                />
-                <motion.div
-                    className="ambient-orb"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 300,
-                        height: 300,
-                        background: `radial-gradient(circle, rgba(0, 229, 200, 0.08), transparent 70%)`,
-                    }}
-                />
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background text-foreground transition-colors duration-300">
+            {/* Animated mesh background for login page */}
+            <div className="absolute inset-0 z-0">
+                <div data-slot="page-header" className="absolute inset-0 opacity-80" />
             </div>
 
             <motion.div
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="glass-card-glow"
-                style={{
-                    width: '100%',
-                    maxWidth: '440px',
-                    padding: 'var(--space-2xl)',
-                    position: 'relative',
-                    zIndex: 1,
-                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                data-slot="login-card"
+                className="w-full max-w-[420px] p-8 sm:p-10 rounded-2xl bg-card border text-card-foreground relative z-10"
             >
                 {/* Logo */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 15 }}
-                    style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}
-                >
+                <div className="text-center mb-10">
                     <motion.div
-                        animate={{ boxShadow: ['0 0 20px var(--accent-glow)', '0 0 40px var(--accent-glow)', '0 0 20px var(--accent-glow)'] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                        style={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: 'var(--radius-xl)',
-                            background: 'var(--accent-1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto var(--space-md)',
-                        }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 20 }}
+                        data-slot="login-icon"
+                        className="w-16 h-16 rounded-[1.25rem] bg-primary mx-auto mb-6 flex items-center justify-center transition-shadow duration-300"
                     >
-                        <Power size={32} color="var(--text-inverse)" strokeWidth={2.5} />
+                        <Power size={32} strokeWidth={2.5} className="text-primary-foreground" />
                     </motion.div>
-                    <h1 style={{
-                        fontSize: '1.75rem',
-                        fontWeight: 800,
-                        color: 'var(--accent-1)',
-                    }}>
+                    <h1 className="text-2xl font-extrabold tracking-tight text-foreground mb-2">
                         Disablarr
                     </h1>
-                    <p style={{
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                        marginTop: 'var(--space-xs)',
-                    }}>
+                    <p className="text-sm text-muted-foreground">
                         Sign in to manage your media automation
                     </p>
-                </motion.div>
+                </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {/* Error Banner */}
                     {error && (
                         <motion.div
-                            initial={{ opacity: 0, y: -8, height: 0 }}
+                            initial={{ opacity: 0, y: -10, height: 0 }}
                             animate={{ opacity: 1, y: 0, height: 'auto' }}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--space-sm)',
-                                padding: 'var(--space-sm) var(--space-md)',
-                                background: 'rgba(255, 56, 96, 0.1)',
-                                border: '1px solid rgba(255, 56, 96, 0.3)',
-                                borderRadius: 'var(--radius-md)',
-                                color: 'var(--status-error)',
-                                fontSize: '0.8125rem',
-                                marginBottom: 'var(--space-md)',
-                                boxShadow: '0 0 16px rgba(255, 56, 96, 0.1)',
-                            }}
+                            className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg"
                         >
-                            <AlertCircle size={16} />
-                            {error}
+                            <AlertCircle size={16} className="shrink-0" />
+                            <span>{error}</span>
                         </motion.div>
                     )}
 
-                    <div className="form-group">
-                        <label className="label" htmlFor="password">
-                            <Lock size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1.5" htmlFor="password">
+                            <Lock size={14} className="text-muted-foreground" />
                             Master Key
                         </label>
                         <input
                             id="password"
-                            className="input"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter your DISABLARR_MASTER_KEY"
                             autoComplete="current-password"
                             autoFocus
+                            className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                         />
                     </div>
 
                     <motion.button
                         type="submit"
-                        className="btn btn-primary"
+                        data-slot="button"
                         disabled={loading}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        style={{
-                            width: '100%',
-                            padding: '14px',
-                            fontSize: '0.9375rem',
-                            marginTop: 'var(--space-sm)',
-                            borderRadius: 'var(--radius-md)',
-                        }}
+                        className="inline-flex items-center justify-center gap-2 mt-2 h-11 px-4 py-2 w-full text-sm font-semibold rounded-lg bg-primary text-primary-foreground shadow-sm hover:brightness-105 active:scale-95 transition-all disabled:opacity-50"
                     >
                         {loading ? (
-                            <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                                ⟳
-                            </motion.span>
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                                <Loader2 size={18} className="text-primary-foreground" />
+                            </motion.div>
                         ) : (
                             <>
-                                <Power size={16} />
+                                <Power size={18} />
                                 Sign In
                             </>
                         )}
                     </motion.button>
                 </form>
 
-                <p style={{
-                    textAlign: 'center',
-                    fontSize: '0.6875rem',
-                    color: 'var(--text-tertiary)',
-                    marginTop: 'var(--space-lg)',
-                    letterSpacing: '0.02em',
-                }}>
+                <p className="text-center text-xs text-muted-foreground/80 mt-8 tracking-wide">
                     Use your DISABLARR_MASTER_KEY as the password
                 </p>
             </motion.div>

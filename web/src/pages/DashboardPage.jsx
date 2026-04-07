@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useSSEData } from '../components/Layout';
 import { api } from '../api/client';
 
-const COLORS = ['var(--accent-1)', 'var(--accent-2)', 'var(--accent-3)', 'var(--status-warning)'];
+const COLORS = ['var(--color-primary)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-warning)'];
 
 function AnimatedNumber({ value, duration = 800 }) {
     const [displayed, setDisplayed] = useState(0);
@@ -21,7 +21,7 @@ function AnimatedNumber({ value, duration = 800 }) {
             if (progress < 1) requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
-    }, [value]); // eslint-disable-line
+    }, [value]);
     return <span>{displayed}</span>;
 }
 
@@ -36,7 +36,7 @@ function formatRelativeTime(isoString) {
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const fadeUp = {
-    hidden: { opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 16 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 20 } },
 };
 
@@ -68,152 +68,119 @@ export default function DashboardPage() {
     ].filter((d) => d.value > 0);
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <h1 className="page-title">Dashboard</h1>
-                <p className="page-subtitle">Monitor and control your Disablarr engine</p>
+        <div className="flex flex-col gap-6">
+            <div data-slot="page-header" className="mb-2">
+                <h1 className="text-3xl font-bold tracking-tight mb-2">Dashboard</h1>
+                <p className="text-muted-foreground">Monitor and control your Disablarr engine</p>
             </div>
 
-            <motion.div variants={stagger} initial="hidden" animate="show">
+            <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col gap-6">
 
                 {/* ─── Engine Status Hero ─── */}
                 <motion.div
                     variants={fadeUp}
-                    className="glass-card-glow"
-                    style={{
-                        padding: 'var(--space-xl)',
-                        marginBottom: 'var(--space-lg)',
-                        position: 'relative',
-                    }}
+                    data-slot="execution-mode-card"
+                    data-active={isRunning}
+                    className="relative overflow-hidden rounded-xl border bg-card text-card-foreground p-6 sm:p-8"
                 >
                     {/* Subtle inner glow */}
-                    <div style={{
-                        position: 'absolute',
-                        top: -40,
-                        right: -40,
-                        width: 200,
-                        height: 200,
-                        borderRadius: '50%',
-                        background: `radial-gradient(circle, ${isRunning ? 'var(--accent-glow)' : 'transparent'}, transparent 70%)`,
-                        filter: 'blur(40px)',
-                        pointerEvents: 'none',
-                        transition: 'background 500ms ease',
-                    }} />
+                    <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none transition-colors duration-500 blur-[40px]"
+                         style={{ background: isRunning ? 'oklch(from var(--color-primary) l c h / 0.15)' : 'transparent' }} 
+                    />
 
-                    <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-lg)', alignItems: 'center' }}>
+                    <div className="relative flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
                         <div>
-                            <div className="section-title">Engine Status</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                            <h3 className="text-lg font-semibold leading-none tracking-tight mb-6">Engine Status</h3>
+                            <div className="flex items-center gap-4 mb-6">
                                 <motion.div
                                     animate={isRunning ? { rotate: 360 } : {}}
                                     transition={isRunning ? { duration: 2, repeat: Infinity, ease: 'linear' } : {}}
+                                    className="flex items-center justify-center w-14 h-14 rounded-xl transition-all duration-300"
                                     style={{
-                                        width: 52,
-                                        height: 52,
-                                        borderRadius: 'var(--radius-lg)',
-                                        background: isRunning
-                                            ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.2), rgba(0, 212, 255, 0.2))'
-                                            : 'var(--bg-tertiary)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: isRunning ? '0 0 24px rgba(6, 255, 165, 0.2)' : 'none',
-                                        transition: 'all 300ms ease',
+                                        background: isRunning ? 'oklch(from var(--color-primary) l c h / 0.1)' : 'var(--color-muted)',
+                                        boxShadow: isRunning ? '0 0 24px oklch(from var(--color-primary) l c h / 0.2)' : 'none',
                                     }}
                                 >
                                     {isRunning
-                                        ? <Zap size={26} style={{ color: 'var(--accent-3)' }} />
-                                        : <Power size={26} style={{ color: 'var(--text-tertiary)' }} />
+                                        ? <Zap size={28} className="text-primary" />
+                                        : <Power size={28} className="text-muted-foreground" />
                                     }
                                 </motion.div>
                                 <div>
-                                    <div style={{
-                                        fontSize: '1.5rem',
-                                        fontWeight: 800,
-                                        color: isRunning ? 'var(--accent-3)' : 'var(--text-primary)',
-                                    }}>
+                                    <div className={`text-3xl font-extrabold tracking-tight ${isRunning ? 'text-primary' : 'text-foreground'}`}>
                                         {isRunning ? 'Running' : 'Idle'}
                                     </div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        <span style={{ color: 'var(--accent-1)', fontWeight: 600 }}>{engineStatus?.cycleCount || 0}</span> cycles completed
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                        <span className="font-semibold text-primary">{engineStatus?.cycleCount || 0}</span> cycles completed
                                     </div>
                                 </div>
                             </div>
 
                             {/* Timing chips */}
-                            <div style={{ display: 'flex', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+                            <div className="flex flex-wrap gap-3">
                                 {[
                                     { icon: Clock, label: 'Last run', value: formatRelativeTime(engineStatus?.lastRunTime) },
                                     { icon: Timer, label: 'Next', value: formatRelativeTime(engineStatus?.nextRunTime) },
                                     { icon: Activity, label: 'Interval', value: `${settings?.intervalMinutes || '—'}m` },
                                 ].map(({ icon: Icon, label, value }) => (
-                                    <div key={label} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        padding: '6px 14px',
-                                        background: 'var(--bg-primary)',
-                                        borderRadius: 'var(--radius-full)',
-                                        border: '1px solid var(--border-default)',
-                                        fontSize: '0.8125rem',
-                                    }}>
-                                        <Icon size={13} style={{ color: 'var(--accent-1)' }} />
-                                        <span style={{ color: 'var(--text-tertiary)' }}>{label}</span>
-                                        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{value}</span>
+                                    <div key={label} className="flex items-center gap-2 px-3.5 py-1.5 bg-background rounded-full border text-xs font-medium">
+                                        <Icon size={14} className="text-primary" />
+                                        <span className="text-muted-foreground">{label}</span>
+                                        <span className="text-foreground">{value}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         {/* Run Now button */}
-                        <motion.button
-                            className="btn btn-primary"
+                        <button
+                            data-slot="button"
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground shadow-xs hover:brightness-105 active:scale-95 transition-all disabled:opacity-50"
                             onClick={handleTrigger}
                             disabled={triggering}
-                            whileHover={{ scale: 1.06 }}
-                            whileTap={{ scale: 0.95 }}
-                            style={{ padding: '14px 28px', fontSize: '0.9375rem', borderRadius: 'var(--radius-lg)' }}
                         >
                             <Play size={18} />
                             {triggering ? 'Triggered!' : 'Run Now'}
-                        </motion.button>
+                        </button>
                     </div>
                 </motion.div>
 
                 {/* ─── Stats Row ─── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
-                        { title: 'Integrations', value: enabledCount, sub: `${totalCount} total · ${enabledCount} active`, icon: TrendingUp, iconColor: 'var(--accent-1)' },
-                        { title: 'Sonarr', value: sonarrCount, sub: 'TV show instances', icon: Tv, iconColor: 'var(--status-info)' },
-                        { title: 'Radarr', value: radarrCount, sub: 'Movie instances', icon: Film, iconColor: 'var(--status-warning)' },
+                        { title: 'Integrations', value: enabledCount, sub: `${totalCount} total · ${enabledCount} active`, icon: TrendingUp },
+                        { title: 'Sonarr', value: sonarrCount, sub: 'TV show instances', icon: Tv },
+                        { title: 'Radarr', value: radarrCount, sub: 'Movie instances', icon: Film },
                     ].map((stat) => (
-                        <motion.div key={stat.title} variants={fadeUp} className="glass-card stat-card">
-                            <div className="section-title">{stat.title}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginTop: 'var(--space-xs)' }}>
-                                <stat.icon size={22} style={{ color: stat.iconColor, opacity: 0.8 }} />
-                                <span className="stat-value"><AnimatedNumber value={stat.value} /></span>
+                        <motion.div key={stat.title} variants={fadeUp} data-slot="card" className="relative p-6 rounded-xl border bg-card text-card-foreground">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-medium leading-none tracking-tight text-muted-foreground">{stat.title}</h3>
+                                <div data-slot="stat-icon"><stat.icon size={16} /></div>
                             </div>
-                            <div className="stat-label">{stat.sub}</div>
+                            <div className="text-3xl font-bold tracking-tight mb-1">
+                                <AnimatedNumber value={stat.value} />
+                            </div>
+                            <p className="text-xs text-muted-foreground">{stat.sub}</p>
                         </motion.div>
                     ))}
                 </div>
 
                 {/* ─── Bottom Row ─── */}
-                <div style={{ display: 'grid', gridTemplateColumns: chartData.length > 0 ? '280px 1fr' : '1fr', gap: 'var(--space-lg)' }}>
+                <div className={`grid gap-6 ${chartData.length > 0 ? 'md:grid-cols-[320px_1fr]' : 'grid-cols-1'}`}>
 
                     {/* Donut chart */}
                     {chartData.length > 0 && (
-                        <motion.div variants={fadeUp} className="glass-card" style={{ padding: 'var(--space-lg)' }}>
-                            <div className="section-title">Breakdown</div>
-                            <div style={{ width: '100%', height: 160, marginTop: 'var(--space-sm)' }}>
+                        <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground">
+                            <h3 className="text-sm font-medium leading-none tracking-tight mb-4">Breakdown</h3>
+                            <div className="h-40 w-full relative">
                                 <ResponsiveContainer>
                                     <PieChart>
                                         <Pie
                                             data={chartData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={40}
-                                            outerRadius={65}
+                                            innerRadius={50}
+                                            outerRadius={75}
                                             paddingAngle={4}
                                             dataKey="value"
                                             animationBegin={200}
@@ -226,10 +193,10 @@ export default function DashboardPage() {
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-md)', marginTop: 'var(--space-sm)' }}>
+                            <div className="flex justify-center gap-4 mt-6">
                                 {chartData.map((d, i) => (
-                                    <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[i] }} />
+                                    <div key={d.name} className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                                        <div className="w-2 h-2 rounded-full" style={{ background: COLORS[i] }} />
                                         {d.name} ({d.value})
                                     </div>
                                 ))}
@@ -238,14 +205,14 @@ export default function DashboardPage() {
                     )}
 
                     {/* Activity */}
-                    <motion.div variants={fadeUp} className="glass-card" style={{ padding: 'var(--space-lg)' }}>
-                        <div className="section-title">Recent Activity</div>
-                        <div className="terminal" style={{ maxHeight: 220, overflow: 'auto', marginTop: 'var(--space-sm)' }}>
+                    <motion.div variants={fadeUp} data-slot="card" className="p-6 rounded-xl border bg-card text-card-foreground">
+                        <h3 className="text-sm font-medium leading-none tracking-tight mb-4">Recent Activity</h3>
+                        <div className="bg-background rounded-lg border p-4 max-h-[240px] overflow-auto font-mono text-[11px] sm:text-xs">
                             {sseData?.logs?.length > 0
                                 ? sseData.logs.slice(-20).map((line, i) => (
-                                    <div key={i} style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{line}</div>
+                                    <div key={i} className="whitespace-pre-wrap break-all text-muted-foreground py-0.5">{line}</div>
                                 ))
-                                : <span style={{ color: 'var(--text-tertiary)' }}>Waiting for engine activity...</span>
+                                : <span className="text-muted-foreground/50 italic">Waiting for engine activity...</span>
                             }
                         </div>
                     </motion.div>

@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { NavLink, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,220 +14,85 @@ const SSEContext = createContext(null);
 export function useSSEData() { return useContext(SSEContext); }
 
 const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/integrations', label: 'Integrations', icon: Plug },
-    { path: '/settings', label: 'Settings', icon: Settings },
-    { path: '/logs', label: 'Logs', icon: ScrollText },
+    { path: '/', label: 'Dashboard' },
+    { path: '/integrations', label: 'Integrations' },
+    { path: '/settings', label: 'Settings' },
+    { path: '/logs', label: 'Logs' },
 ];
 
 export default function Layout() {
     const { logout } = useAuth();
     const location = useLocation();
     const sseData = useSSE();
-    const { theme, setTheme, themes } = useTheme();
-
-    function cycleTheme() {
-        const idx = themes.findIndex((t) => t.id === theme);
-        const next = themes[(idx + 1) % themes.length];
-        setTheme(next.id);
-    }
 
     return (
         <SSEContext.Provider value={sseData}>
-            <div style={{ display: 'flex', minHeight: '100vh' }}>
-                {/* Sidebar */}
-                <aside style={{
-                    width: 250,
-                    background: 'var(--bg-secondary)',
-                    borderRight: '1px solid var(--border-default)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    zIndex: 50,
-                    transition: 'background 400ms ease',
-                }}>
-                    {/* Brand */}
-                    <div style={{
-                        padding: 'var(--space-lg) var(--space-lg) var(--space-md)',
-                        borderBottom: '1px solid var(--border-default)',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                            <motion.div
-                                animate={{ boxShadow: ['0 0 12px var(--accent-glow)', '0 0 24px var(--accent-glow)', '0 0 12px var(--accent-glow)'] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                                style={{
-                                    width: 36,
-                                    height: 36,
-                                    borderRadius: 'var(--radius-md)',
-                                    background: 'var(--accent-1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Power size={18} color="var(--text-inverse)" strokeWidth={2.5} />
-                            </motion.div>
-                            <span style={{
-                                fontSize: '1.25rem',
-                                fontWeight: 800,
-                                color: 'var(--accent-1)',
-                            }}>
-                                Disablarr
-                            </span>
-                        </div>
+            <div data-slot="app-shell" className="min-h-screen bg-background text-foreground transition-colors duration-300">
+                
+                {/* Navbar */}
+                <header data-slot="navbar" className="sticky top-0 z-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex items-center justify-between h-16">
+                            
+                            {/* Brand & Left Side */}
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-2.5 group">
+                                    <div data-slot="brand-icon" className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                                        <Power className="w-4.5 h-4.5 text-primary-foreground text-white" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-lg font-bold tracking-tight text-foreground leading-tight">
+                                            Disablarr
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground/50 leading-none font-mono mt-0.5 flex items-center gap-1">
+                                            {sseData.connected ? <Wifi size={10} className="text-success" /> : <WifiOff size={10} className="text-muted-foreground" />}
+                                            {sseData.connected ? 'Connected' : 'Disconnected'}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div className="hidden sm:block ml-2">
+                                     <StatusBadge dryRun={sseData.settings?.dryRun} />
+                                </div>
+                            </div>
 
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            marginTop: 'var(--space-sm)',
-                            fontSize: '0.75rem',
-                            color: sseData.connected ? 'var(--status-success)' : 'var(--text-tertiary)',
-                        }}>
-                            {sseData.connected ? <Wifi size={12} /> : <WifiOff size={12} />}
-                            {sseData.connected ? 'Connected' : 'Disconnected'}
-                        </div>
-                    </div>
+                            {/* Nav Links */}
+                            <nav aria-label="Main navigation" className="hidden sm:flex items-center gap-1">
+                                {navItems.map((item) => {
+                                    const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                                    return (
+                                        <NavLink
+                                            key={item.path}
+                                            to={item.path}
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                                isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                            }`}
+                                            data-slot={isActive ? 'nav-link-active' : undefined}
+                                        >
+                                            {item.label}
+                                        </NavLink>
+                                    );
+                                })}
 
-                    {/* Status badge */}
-                    <div style={{ padding: 'var(--space-md) var(--space-lg)' }}>
-                        <StatusBadge dryRun={sseData.settings?.dryRun} />
-                    </div>
-
-                    {/* Navigation */}
-                    <nav style={{ flex: 1, padding: '0 var(--space-sm)' }}>
-                        {navItems.map((item) => {
-                            const isActive = location.pathname === item.path;
-                            const Icon = item.icon;
-                            return (
-                                <NavLink
-                                    key={item.path}
-                                    to={item.path}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 'var(--space-sm)',
-                                        padding: '10px 16px',
-                                        borderRadius: 'var(--radius-md)',
-                                        color: isActive ? 'var(--accent-1)' : 'var(--text-secondary)',
-                                        background: isActive ? 'rgba(168, 85, 247, 0.06)' : 'transparent',
-                                        fontSize: '0.875rem',
-                                        fontWeight: isActive ? 600 : 400,
-                                        transition: 'all 150ms ease',
-                                        marginBottom: 2,
-                                        textDecoration: 'none',
-                                        position: 'relative',
-                                    }}
+                                <div className="w-px h-5 bg-border mx-2" />
+                                
+                                <button
+                                    onClick={logout}
+                                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 flex items-center gap-2"
                                 >
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="nav-indicator"
-                                            style={{
-                                                position: 'absolute',
-                                                left: 0,
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                width: 3,
-                                                height: '60%',
-                                                borderRadius: 'var(--radius-full)',
-                                                background: 'var(--accent-1)',
-                                                boxShadow: '0 0 8px var(--accent-glow)',
-                                            }}
-                                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                        />
-                                    )}
-                                    <Icon size={18} />
-                                    {item.label}
-                                </NavLink>
-                            );
-                        })}
-                    </nav>
-
-                    {/* Footer */}
-                    <div style={{ borderTop: '1px solid var(--border-default)', padding: 'var(--space-sm) var(--space-md)' }}>
-                        <button
-                            onClick={cycleTheme}
-                            className="btn btn-icon"
-                            title={`Theme: ${themes.find((t) => t.id === theme)?.label}`}
-                            style={{
-                                width: '100%',
-                                justifyContent: 'flex-start',
-                                gap: 'var(--space-sm)',
-                                color: 'var(--text-secondary)',
-                                padding: '10px 16px',
-                                fontSize: '0.8125rem',
-                            }}
-                        >
-                            <Palette size={15} />
-                            <span>{themes.find((t) => t.id === theme)?.label || 'Theme'}</span>
-                        </button>
-                        <button
-                            onClick={logout}
-                            className="btn btn-icon"
-                            style={{
-                                width: '100%',
-                                justifyContent: 'flex-start',
-                                gap: 'var(--space-sm)',
-                                color: 'var(--text-secondary)',
-                                padding: '10px 16px',
-                                fontSize: '0.8125rem',
-                            }}
-                        >
-                            <LogOut size={15} />
-                            Sign Out
-                        </button>
+                                    <LogOut size={16} />
+                                    Sign Out
+                                </button>
+                            </nav>
+                        </div>
                     </div>
-                </aside>
+                </header>
 
-                {/* Main */}
-                <main style={{ flex: 1, marginLeft: 250, position: 'relative' }}>
-                    {/* Ambient background */}
-                    <div className="ambient-bg">
-                        <motion.div
-                            className="ambient-orb"
-                            animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-                            transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-                            style={{
-                                top: '5%',
-                                right: '10%',
-                                width: 300,
-                                height: 300,
-                                background: `radial-gradient(circle, var(--accent-glow), transparent 70%)`,
-                                opacity: 0.3,
-                            }}
-                        />
-                        <motion.div
-                            className="ambient-orb"
-                            animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
-                            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-                            style={{
-                                bottom: '10%',
-                                left: '5%',
-                                width: 350,
-                                height: 350,
-                                background: `radial-gradient(circle, rgba(168, 85, 247, 0.15), transparent 70%)`,
-                                opacity: 0.3,
-                            }}
-                        />
-                    </div>
-
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={location.pathname}
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -12 }}
-                            transition={{ duration: 0.25 }}
-                            style={{ position: 'relative', zIndex: 1 }}
-                        >
-                            <Outlet />
-                        </motion.div>
-                    </AnimatePresence>
+                {/* Main Content Area */}
+                <main data-slot="page-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-6">
+                    <Outlet />
                 </main>
+                
             </div>
         </SSEContext.Provider>
     );
