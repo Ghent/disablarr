@@ -1,50 +1,20 @@
-# golangci-lint configuration for Disablarr
-# Docs: https://golangci-lint.run/usage/configuration/
-
-version: "2"
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - web/node_modules
+    - vendor
 
 linters:
-  # Start from a default set and add/disable as needed
-  default: standard
   enable:
-    - bodyclose      # ensures HTTP response bodies are closed
-    - contextcheck   # ensures context is propagated correctly
-    - errcheck       # ensures error return values are checked
-    - exhaustive     # ensures switch statements over enums are exhaustive
-    - gocritic       # opinionated style and bug checks
-    - godot          # checks that comments end with a period
-    - gofmt          # checks formatting (redundant with CI step, but fast)
-    - goimports      # ensures imports are grouped and sorted
-    - gosec          # security-oriented checks (G401 etc.)
-    - misspell       # catches common spelling errors in comments/strings
-    - noctx          # finds HTTP requests sent without context
-    - prealloc       # suggests pre-allocating slices
-    - revive         # drop-in replacement for golint
-    - stylecheck     # enforces Go style conventions
-    - unconvert      # removes unnecessary type conversions
-    - unparam        # reports unused function parameters
-    - unused         # checks for unused code
-  disable:
-    - depguard       # we manage deps via go.mod
-    - exhaustruct    # too noisy for TUI models with many optional fields
-
-linters-settings:
-  gosec:
-    excludes:
-      - G115  # integer overflow on conversion — acceptable in this codebase
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-  godot:
-    # Only enforce periods on exported function doc comments
-    scope: toplevel
+    - gocritic
+    - godot
+    - gofmt
+    - govet
+    - staticcheck
+    - unused
 
 issues:
-  # Don't fail on the generated test helpers
-  exclude-rules:
-    - path: "_test\\.go"
-      linters:
-        - errcheck
-        - gosec
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

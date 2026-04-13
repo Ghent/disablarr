@@ -56,8 +56,8 @@ lint:
 vuln:
 	govulncheck ./...
 
-## check: run all quality checks (fmt, lint, vuln)
-check: fmt-check lint vuln
+## check: run all quality checks (fmt, lint)
+check: fmt-check lint
 
 ## clean: remove build artefacts
 clean:

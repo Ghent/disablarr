@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// Movie represents a Radarr movie
+// Movie represents a Radarr movie.
 type Movie struct {
 	ID               int        `json:"id"`
 	Title            string     `json:"title"`
@@ -19,7 +19,7 @@ type Movie struct {
 	QualityProfileId int        `json:"qualityProfileId"`
 }
 
-// MovieFile contains the details for a downloaded movie file
+// MovieFile contains the details for a downloaded movie file.
 type MovieFile struct {
 	Quality struct {
 		Quality struct {
@@ -31,7 +31,7 @@ type MovieFile struct {
 	} `json:"customFormats"`
 }
 
-// GetMovies retrieves all movies from Radarr
+// GetMovies retrieves all movies from Radarr.
 func (c *Client) GetMovies(ctx context.Context) ([]Movie, error) {
 	b, err := c.doRequest(ctx, http.MethodGet, "/movie", nil)
 	if err != nil {
@@ -43,20 +43,20 @@ func (c *Client) GetMovies(ctx context.Context) ([]Movie, error) {
 	return movies, err
 }
 
-// UpdateMovie updates a given movie in Radarr
+// UpdateMovie updates a given movie in Radarr.
 func (c *Client) UpdateMovie(ctx context.Context, m Movie) error {
 	_, err := c.doRequest(ctx, http.MethodPut, fmt.Sprintf("/movie/%d", m.ID), m)
 	return err
 }
 
-// QualityProfile defines cutoffs for quality matching
+// QualityProfile defines cutoffs for quality matching.
 type QualityProfile struct {
 	ID             int  `json:"id"`
 	Cutoff         int  `json:"cutoff"`
 	UpgradeAllowed bool `json:"upgradeAllowed"`
 }
 
-// GetQualityProfiles fetches quality profiles to check if a cutoff has been met
+// GetQualityProfiles fetches quality profiles to check if a cutoff has been met.
 func (c *Client) GetQualityProfiles(ctx context.Context) ([]QualityProfile, error) {
 	b, err := c.doRequest(ctx, http.MethodGet, "/qualityprofile", nil)
 	if err != nil {

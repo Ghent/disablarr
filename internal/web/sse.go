@@ -57,7 +57,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 				"cycleCount":  status.CycleCount,
 			})
 			if err == nil {
-				fmt.Fprintf(w, "event: engine-status\ndata: %s\n\n", statusJSON)
+				_, _ = fmt.Fprintf(w, "event: engine-status\ndata: %s\n\n", statusJSON)
 			}
 
 			// Stream new log entries.
@@ -68,7 +68,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 					newEntries := entries[lastLogCount:]
 					logsJSON, err := json.Marshal(newEntries)
 					if err == nil {
-						fmt.Fprintf(w, "event: logs\ndata: %s\n\n", logsJSON)
+						_, _ = fmt.Fprintf(w, "event: logs\ndata: %s\n\n", logsJSON)
 					}
 					lastLogCount = currentCount
 				}
@@ -82,7 +82,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 					"intervalMinutes": setting.IntervalMinutes,
 				})
 				if err == nil {
-					fmt.Fprintf(w, "event: settings\ndata: %s\n\n", settingsJSON)
+					_, _ = fmt.Fprintf(w, "event: settings\ndata: %s\n\n", settingsJSON)
 				}
 			}
 

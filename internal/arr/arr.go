@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-// Client is a generic API client for *arr applications
+// Client is a generic API client for *arr applications.
 type Client struct {
 	baseURL string
 	apiKey  string
 	http    *http.Client
 }
 
-// NewClient returns a new Arr API client
+// NewClient returns a new Arr API client.
 func NewClient(url, apiKey string) *Client {
 	// Ensure no trailing slash
 	if len(url) > 0 && url[len(url)-1] == '/' {
@@ -34,7 +34,7 @@ func NewClient(url, apiKey string) *Client {
 	}
 }
 
-// doRequest performs an HTTP request against the API
+// doRequest performs an HTTP request against the API.
 func (c *Client) doRequest(ctx context.Context, method, endpoint string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
@@ -61,7 +61,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -75,13 +75,13 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	return respBody, nil
 }
 
-// Tag represents an Arr tag
+// Tag represents an Arr tag.
 type Tag struct {
 	ID    int    `json:"id,omitempty"`
 	Label string `json:"label"`
 }
 
-// GetTags retrieves all tags
+// GetTags retrieves all tags.
 func (c *Client) GetTags(ctx context.Context) ([]Tag, error) {
 	b, err := c.doRequest(ctx, http.MethodGet, "/tag", nil)
 	if err != nil {
@@ -93,7 +93,7 @@ func (c *Client) GetTags(ctx context.Context) ([]Tag, error) {
 	return tags, err
 }
 
-// CreateTag creates a new tag
+// CreateTag creates a new tag.
 func (c *Client) CreateTag(ctx context.Context, label string) (*Tag, error) {
 	payload := Tag{Label: strings.ToLower(label)}
 	b, err := c.doRequest(ctx, http.MethodPost, "/tag", payload)
@@ -106,7 +106,7 @@ func (c *Client) CreateTag(ctx context.Context, label string) (*Tag, error) {
 	return &tag, err
 }
 
-// EnsureTag ensures a tag exists and returns its ID
+// EnsureTag ensures a tag exists and returns its ID.
 func (c *Client) EnsureTag(ctx context.Context, label string) (int, error) {
 	label = strings.ToLower(label)
 	tags, err := c.GetTags(ctx)

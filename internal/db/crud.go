@@ -40,7 +40,7 @@ func (db *DB) ListIntegrations(ctx context.Context) ([]Integration, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var integrations []Integration
 	for rows.Next() {

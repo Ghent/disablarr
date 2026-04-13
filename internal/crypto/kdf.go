@@ -5,10 +5,10 @@ import (
 )
 
 // DeriveKeys uses Argon2id to derive two mathematically separate 32-byte keys from a single master password.
-func DeriveKeys(password string) (dbKey []byte, authKey []byte) {
+func DeriveKeys(password string) (dbKey, authKey []byte) {
 	pwBytes := []byte(password)
 
-	// Argon2id parameters: 
+	// Argon2id parameters:
 	// time=1 iteration, memory=64MB, threads=4, key length=32 bytes
 	time := uint32(1)
 	memory := uint32(64 * 1024)

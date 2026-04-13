@@ -63,7 +63,7 @@ func main() {
 		slog.Error("Failed to initialize database", "error", err)
 		os.Exit(1)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	// 4. Start Engine (Ticker)
 	eng := engine.New(database)

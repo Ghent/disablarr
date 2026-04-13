@@ -20,12 +20,12 @@ type AppSetting struct {
 
 // Integration represents a configured Radarr or Sonarr server.
 type Integration struct {
-	ID      int
-	Name    string
-	Type    string
-	URL     string
-	APIKey  string
-	Enabled bool
+	ID                        int
+	Name                      string
+	Type                      string
+	URL                       string
+	APIKey                    string
+	Enabled                   bool
 	UnmonitorCompletedSeasons bool
 }
 
