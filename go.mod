@@ -1,6 +1,6 @@
 module gitlab.com/starshadow/software/disablarr
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/ncruces/go-sqlite3 v0.21.3

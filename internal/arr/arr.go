@@ -1,3 +1,4 @@
+// Package arr provides generic and application-specific clients for *arr APIs.
 package arr
 
 import (

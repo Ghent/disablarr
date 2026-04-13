@@ -1,3 +1,4 @@
+// Package web implements the HTTP server and API handlers.
 package web
 
 import (
@@ -141,7 +142,7 @@ func (s *Server) handleTestConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := testArrConnection(req.URL, req.APIKey); err != nil {
+	if err := testArrConnection(r.Context(), req.URL, req.APIKey); err != nil {
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"success": false,
 			"error":   err.Error(),
@@ -155,14 +156,14 @@ func (s *Server) handleTestConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 // testArrConnection tests connectivity to an *arr instance.
-func testArrConnection(urlStr, apiKey string) error {
+func testArrConnection(ctx context.Context, urlStr, apiKey string) error {
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	if len(urlStr) > 0 && urlStr[len(urlStr)-1] == '/' {
 		urlStr = urlStr[:len(urlStr)-1]
 	}
 
-	req, err := http.NewRequest("GET", urlStr+"/api/v3/system/status", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", urlStr+"/api/v3/system/status", nil)
 	if err != nil {
 		return err
 	}
@@ -231,14 +232,14 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 
 // --- Engine Handlers ---
 
-func (s *Server) handleTriggerEngine(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleTriggerEngine(w http.ResponseWriter, _ *http.Request) {
 	if s.triggerFn != nil {
 		s.triggerFn()
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "triggered"})
 }
 
-func (s *Server) handleEngineStatus(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleEngineStatus(w http.ResponseWriter, _ *http.Request) {
 	status := s.engine.Status()
 	dto := engineStatusDTO{
 		IsRunning:  status.IsRunning,

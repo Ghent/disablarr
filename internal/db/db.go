@@ -1,3 +1,4 @@
+// Package db handles SQLite persistence and schema management.
 package db
 
 import (
@@ -29,11 +30,13 @@ type Integration struct {
 	UnmonitorCompletedSeasons bool
 }
 
+// DB is the primary database handle.
 type DB struct {
 	conn *sql.DB
 	cm   *crypto.CryptoManager
 }
 
+// NewDB initializes the SQLite database and runs migrations.
 func NewDB(dbPath string, cm *crypto.CryptoManager) (*DB, error) {
 	conn, err := sql.Open("sqlite3", dbPath)
 	if err != nil {

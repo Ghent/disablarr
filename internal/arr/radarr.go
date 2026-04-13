@@ -16,7 +16,7 @@ type Movie struct {
 	HasFile          bool       `json:"hasFile"`
 	MovieFile        *MovieFile `json:"movieFile,omitempty"`
 	Tags             []int      `json:"tags"`
-	QualityProfileId int        `json:"qualityProfileId"`
+	QualityProfileID int        `json:"qualityProfileId"`
 }
 
 // MovieFile contains the details for a downloaded movie file.

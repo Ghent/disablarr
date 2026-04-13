@@ -1,20 +1,41 @@
+version: "2"
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - misspell
+    - unparam
+    - unused
+    - gosec
+    - gocritic
+    - revive
+    - nilerr
+    - bodyclose
+    - goconst
+    - prealloc
+    - exhaustive
+    - noctx
+  settings:
+    goconst:
+      min-occurrences: 5
+  exclusions:
+    rules:
+      - path: _test\.go$
+        linters:
+          - errcheck
+          - goconst
+
+      # G117 (gosec): Exported struct field with JSON key matching secret pattern.
+      - path: (internal/db/|internal/web/api|internal/web/auth)\.go$
+        text: "G117"
+        linters:
+          - gosec
+
 run:
   timeout: 5m
   tests: true
   skip-dirs:
-    - web/node_modules
-    - vendor
-
-linters:
-  enable:
-    - gocritic
-    - godot
-    - gofmt
-    - govet
-    - staticcheck
-    - unused
-
-issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
+    - web

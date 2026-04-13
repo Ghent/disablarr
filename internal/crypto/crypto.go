@@ -1,3 +1,4 @@
+// Package crypto provides AES-GCM encryption and Argon2id key derivation.
 package crypto
 
 import (
@@ -9,6 +10,7 @@ import (
 )
 
 var (
+	// ErrInvalidKeySize is returned when the key is not exactly 32 bytes.
 	ErrInvalidKeySize = errors.New("master key must be a 32-byte hex string (64 characters)")
 )
 

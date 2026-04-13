@@ -1,3 +1,4 @@
+// Package web implements the HTTP server and API handlers.
 package web
 
 import (
@@ -45,7 +46,7 @@ func New(database *db.DB, eng *engine.Engine, logs *logger.LogBuffer, authKey []
 	spaFS, err := fs.Sub(frontendFS, "dist")
 	if err != nil {
 		slog.Warn("Frontend assets not found (development mode?)", "error", err)
-		mux.HandleFunc(basePath+"/", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(basePath+"/", func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
 			_, _ = fmt.Fprint(w, `<!DOCTYPE html><html><body style="background:#0d1117;color:#c9d1d9;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh"><div style="text-align:center"><h1>Disablarr</h1><p>Frontend not built. Run <code>cd web && npm run build</code> first.</p></div></body></html>`)
 		})

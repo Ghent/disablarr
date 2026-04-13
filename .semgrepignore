@@ -1,0 +1,6 @@
+# Semgrep exclusion list — kept to an absolute minimum.
+#
+# POLICY: Every exclusion must be justified and documented in SECURITY.md § Semgrep.
+# Test files, utilities, and all application code are scanned. Inline nosemgrep
+# annotations with documented rationale are used for false positives instead of
+# blanket directory exclusions.

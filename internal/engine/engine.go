@@ -1,3 +1,4 @@
+// Package engine implements the background daemon that orchestrates unmonitoring.
 package engine
 
 import (
@@ -11,8 +12,8 @@ import (
 	"gitlab.com/starshadow/software/disablarr/internal/db"
 )
 
-// EngineStatus is a snapshot of the engine's current state.
-type EngineStatus struct {
+// Status is a snapshot of the engine's current state.
+type Status struct {
 	IsRunning   bool
 	LastRunTime time.Time
 	NextRunTime time.Time
@@ -40,10 +41,10 @@ func New(database *db.DB) *Engine {
 }
 
 // Status returns a snapshot of the engine's current state.
-func (e *Engine) Status() EngineStatus {
+func (e *Engine) Status() Status {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	return EngineStatus{
+	return Status{
 		IsRunning:   e.isRunning,
 		LastRunTime: e.lastRunTime,
 		NextRunTime: e.nextRunTime,
@@ -157,10 +158,13 @@ func (e *Engine) executeCycle(ctx context.Context) {
 
 		client := arr.NewClient(integration.URL, integration.APIKey)
 
-		if strings.ToLower(integration.Type) == "sonarr" {
+		switch strings.ToLower(integration.Type) {
+		case "sonarr":
 			e.processSonarr(ctx, client, integration, setting.DryRun)
-		} else if strings.ToLower(integration.Type) == "radarr" {
+		case "radarr":
 			e.processRadarr(ctx, client, integration.Name, setting.DryRun)
+		default:
+			slog.Warn("Unknown integration type", "name", integration.Name, "type", integration.Type)
 		}
 	}
 }
@@ -310,7 +314,7 @@ func (e *Engine) processRadarr(ctx context.Context, client *arr.Client, identity
 		}
 
 		// Rule 3: Quality must meet the cutoff specified by its profile
-		cutoffID, ok := profileCutoffs[m.QualityProfileId]
+		cutoffID, ok := profileCutoffs[m.QualityProfileID]
 		if ok {
 			profileMet := false
 			if m.MovieFile.Quality.Quality.ID == cutoffID {
@@ -320,7 +324,7 @@ func (e *Engine) processRadarr(ctx context.Context, client *arr.Client, identity
 			// Alternatively, if the profile doesn't allow upgrades at all, whatever downloaded is final
 			var profileInstance arr.QualityProfile
 			for _, p := range profiles {
-				if p.ID == m.QualityProfileId {
+				if p.ID == m.QualityProfileID {
 					profileInstance = p
 					break
 				}

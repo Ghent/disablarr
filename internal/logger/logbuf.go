@@ -1,3 +1,4 @@
+// Package logger provides a ring buffer and slog handler for TUI and API log streaming.
 package logger
 
 import (
@@ -16,11 +17,11 @@ type LogBuffer struct {
 	max     int
 }
 
-// NewLogBuffer creates a LogBuffer that retains at most max entries.
-func NewLogBuffer(max int) *LogBuffer {
+// NewLogBuffer creates a LogBuffer that retains at most limit entries.
+func NewLogBuffer(limit int) *LogBuffer {
 	return &LogBuffer{
-		max:     max,
-		entries: make([]string, 0, max),
+		max:     limit,
+		entries: make([]string, 0, limit),
 	}
 }
 
@@ -60,26 +61,30 @@ func NewRingHandler(buf *LogBuffer) *RingHandler {
 	}
 }
 
+// Enabled returns true if the wrapped handler is enabled for the given level.
 func (h *RingHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return h.wrapped.Enabled(ctx, level)
 }
 
+// Handle builds a human-readable line and adds it to the buffer, then forwards to the wrapped handler.
 func (h *RingHandler) Handle(ctx context.Context, r slog.Record) error {
 	// Build a terse, human-readable line for the TUI log view.
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("[%s] %s", r.Level.String(), r.Message))
+	_, _ = fmt.Fprintf(&sb, "[%s] %s", r.Level.String(), r.Message)
 	r.Attrs(func(a slog.Attr) bool {
-		sb.WriteString(fmt.Sprintf("  %s=%v", a.Key, a.Value.Any()))
+		_, _ = fmt.Fprintf(&sb, "  %s=%v", a.Key, a.Value.Any())
 		return true
 	})
 	h.buf.Add(sb.String())
 	return h.wrapped.Handle(ctx, r)
 }
 
+// WithAttrs returns a new RingHandler with the additional attributes.
 func (h *RingHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &RingHandler{buf: h.buf, wrapped: h.wrapped.WithAttrs(attrs)}
 }
 
+// WithGroup returns a new RingHandler with the additional group.
 func (h *RingHandler) WithGroup(name string) slog.Handler {
 	return &RingHandler{buf: h.buf, wrapped: h.wrapped.WithGroup(name)}
 }
