@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"io"
 )
@@ -18,12 +17,8 @@ type CryptoManager struct {
 	key []byte
 }
 
-// NewCryptoManager parses the hex-encoded 32-byte master key.
-func NewCryptoManager(hexKey string) (*CryptoManager, error) {
-	key, err := hex.DecodeString(hexKey)
-	if err != nil {
-		return nil, err
-	}
+// NewCryptoManager accepts a 32-byte raw AES key.
+func NewCryptoManager(key []byte) (*CryptoManager, error) {
 	if len(key) != 32 {
 		return nil, ErrInvalidKeySize
 	}

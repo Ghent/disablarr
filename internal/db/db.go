@@ -26,6 +26,7 @@ type Integration struct {
 	URL     string
 	APIKey  string
 	Enabled bool
+	UnmonitorCompletedSeasons bool
 }
 
 type DB struct {
@@ -94,6 +95,9 @@ func (db *DB) initSchema() error {
 
 	// Idempotent migration: add dry_run column.
 	_, _ = db.conn.ExecContext(ctx, `ALTER TABLE settings ADD COLUMN dry_run INTEGER NOT NULL DEFAULT 1`)
+
+	// Idempotent migration: add unmonitor_completed_seasons to integrations
+	_, _ = db.conn.ExecContext(ctx, `ALTER TABLE integrations ADD COLUMN unmonitor_completed_seasons INTEGER NOT NULL DEFAULT 0`)
 	return nil
 }
 

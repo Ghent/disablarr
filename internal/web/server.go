@@ -11,7 +11,7 @@ import (
 
 	"gitlab.com/starshadow/software/disablarr/internal/db"
 	"gitlab.com/starshadow/software/disablarr/internal/engine"
-	"gitlab.com/starshadow/software/disablarr/internal/tui"
+	"gitlab.com/starshadow/software/disablarr/internal/logger"
 )
 
 // Server is the HTTP server that serves the web UI and API.
@@ -19,19 +19,19 @@ type Server struct {
 	httpServer *http.Server
 	db         *db.DB
 	engine     *engine.Engine
-	logs       *tui.LogBuffer
-	masterKey  string
+	logs       *logger.LogBuffer
+	authKey    []byte
 	basePath   string
 	triggerFn  func()
 }
 
 // New creates a new web server.
-func New(database *db.DB, eng *engine.Engine, logs *tui.LogBuffer, masterKey string, port int, basePath string, triggerFn func()) *Server {
+func New(database *db.DB, eng *engine.Engine, logs *logger.LogBuffer, authKey []byte, port int, basePath string, triggerFn func()) *Server {
 	s := &Server{
 		db:        database,
 		engine:    eng,
 		logs:      logs,
-		masterKey: masterKey,
+		authKey:   authKey,
 		basePath:  basePath,
 		triggerFn: triggerFn,
 	}

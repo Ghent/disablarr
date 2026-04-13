@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-purple: oklch(0.6 0.28 290);
+  --color-glass-dark: rgba(10, 10, 15, 0.6);
+  --color-glass-border: rgba(255, 255, 255, 0.05);
+  --color-glow-pulse: oklch(0.5 0.2 290 / 0.5);
+}
+
+@layer base {
+  body {
+    background-color: #0A0A0F;
+    color: white;
+    font-family: "Geist", "Inter", sans-serif;
+    /* Deep dark radial gradients for an immersive glowing void effect */
+    background-image: 
+      radial-gradient(circle at 10% 20%, oklch(0.3 0.1 290) 0%, transparent 40%),
+      radial-gradient(circle at 80% 80%, oklch(0.2 0.08 280) 0%, transparent 40%);
+    background-attachment: fixed;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+/* Base resets & utilities for glassmorphism */
+.glass-panel {
+  background: var(--color-glass-dark);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px var(--color-neon-purple);
+}
+
+.glow-border {
+  border-color: var(--color-neon-purple);
+  box-shadow: 0 0 15px var(--color-glow-pulse);
+}

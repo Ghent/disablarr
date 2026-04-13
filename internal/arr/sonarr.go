@@ -7,13 +7,28 @@ import (
 	"net/http"
 )
 
+// SeasonStatistics represents episode download counts for a season
+type SeasonStatistics struct {
+	EpisodeCount      int `json:"episodeCount"`
+	EpisodeFileCount  int `json:"episodeFileCount"`
+	TotalEpisodeCount int `json:"totalEpisodeCount"`
+}
+
+// Season represents a series season in Sonarr
+type Season struct {
+	SeasonNumber int              `json:"seasonNumber"`
+	Monitored    bool             `json:"monitored"`
+	Statistics   SeasonStatistics `json:"statistics"`
+}
+
 // Series represents a Sonarr series
 type Series struct {
-	ID        int    `json:"id"`
-	Title     string `json:"title"`
-	Status    string `json:"status"`
-	Monitored bool   `json:"monitored"`
-	Tags      []int  `json:"tags"`
+	ID        int      `json:"id"`
+	Title     string   `json:"title"`
+	Status    string   `json:"status"`
+	Monitored bool     `json:"monitored"`
+	Tags      []int    `json:"tags"`
+	Seasons   []Season `json:"seasons"`
 }
 
 // GetSeries retrieves all series from Sonarr

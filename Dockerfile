@@ -1,4 +1,4 @@
-FROM node:22-alpine AS frontend
+FROM node:22.14.0-alpine AS frontend
 
 WORKDIR /app/web
 COPY web/package*.json ./
@@ -6,7 +6,7 @@ RUN npm ci
 COPY web/ ./
 RUN npm run build
 
-FROM golang:1.24.0-alpine AS builder
+FROM golang:1.25.0-alpine AS builder
 
 WORKDIR /app
 
@@ -21,13 +21,22 @@ COPY . .
 # Copy built frontend into the embed location
 COPY --from=frontend /app/web/dist ./internal/web/dist
 
+# Build args for version tagging
+ARG APP_VERSION=dev
+ARG COMMIT_SHA=unknown
+ARG BUILD_DATE=unknown
+
 # Build statically without CGO. modernc/sqlite handles the DB without C
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o disablarr main.go
+RUN CGO_ENABLED=0 go build \
+    -ldflags="-s -w \
+    -X main.version=${APP_VERSION} \
+    -X main.commit=${COMMIT_SHA} \
+    -X main.buildDate=${BUILD_DATE}" \
+    -o disablarr main.go
 
 FROM scratch
 
 # Default environment variables
-ENV DISABLARR_MASTER_KEY=""
 ENV DISABLARR_BASE_PATH=""
 
 COPY --from=builder /app/disablarr /app/disablarr
@@ -38,6 +47,6 @@ COPY --from=builder /app/disablarr /app/disablarr
 
 VOLUME ["/app/data"]
 
-EXPOSE 22222 7812
+EXPOSE 7812
 
 CMD ["/app/disablarr"]

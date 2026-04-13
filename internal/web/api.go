@@ -13,20 +13,22 @@ import (
 // --- Integration DTOs ---
 
 type integrationDTO struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	URL     string `json:"url"`
-	APIKey  string `json:"apiKey,omitempty"`
-	Enabled bool   `json:"enabled"`
+	ID                        int    `json:"id"`
+	Name                      string `json:"name"`
+	Type                      string `json:"type"`
+	URL                       string `json:"url"`
+	APIKey                    string `json:"apiKey,omitempty"`
+	Enabled                   bool   `json:"enabled"`
+	UnmonitorCompletedSeasons bool   `json:"unmonitorCompletedSeasons"`
 }
 
 type integrationCreateReq struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	URL     string `json:"url"`
-	APIKey  string `json:"apiKey"`
-	Enabled bool   `json:"enabled"`
+	Name                      string `json:"name"`
+	Type                      string `json:"type"`
+	URL                       string `json:"url"`
+	APIKey                    string `json:"apiKey"`
+	Enabled                   bool   `json:"enabled"`
+	UnmonitorCompletedSeasons bool   `json:"unmonitorCompletedSeasons"`
 }
 
 type connectionTestReq struct {
@@ -63,11 +65,12 @@ func (s *Server) handleListIntegrations(w http.ResponseWriter, r *http.Request) 
 	dtos := make([]integrationDTO, len(integrations))
 	for i, integ := range integrations {
 		dtos[i] = integrationDTO{
-			ID:      integ.ID,
-			Name:    integ.Name,
-			Type:    integ.Type,
-			URL:     integ.URL,
-			Enabled: integ.Enabled,
+			ID:                        integ.ID,
+			Name:                      integ.Name,
+			Type:                      integ.Type,
+			URL:                       integ.URL,
+			Enabled:                   integ.Enabled,
+			UnmonitorCompletedSeasons: integ.UnmonitorCompletedSeasons,
 			// API key intentionally omitted from list response
 		}
 	}
@@ -87,7 +90,7 @@ func (s *Server) handleCreateIntegration(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := s.db.AddIntegration(r.Context(), req.Name, req.Type, req.URL, req.APIKey, req.Enabled); err != nil {
+	if err := s.db.AddIntegration(r.Context(), req.Name, req.Type, req.URL, req.APIKey, req.Enabled, req.UnmonitorCompletedSeasons); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
@@ -108,7 +111,7 @@ func (s *Server) handleUpdateIntegration(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	if err := s.db.UpdateIntegration(r.Context(), id, req.Name, req.Type, req.URL, req.APIKey, req.Enabled); err != nil {
+	if err := s.db.UpdateIntegration(r.Context(), id, req.Name, req.Type, req.URL, req.APIKey, req.Enabled, req.UnmonitorCompletedSeasons); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 // AddIntegration encrypts the API key and stores the integration in the database.
-func (db *DB) AddIntegration(ctx context.Context, name, integrationType, url, apiKey string, enabled bool) error {
+func (db *DB) AddIntegration(ctx context.Context, name, integrationType, url, apiKey string, enabled, unmonitorCompletedSeasons bool) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -20,8 +20,13 @@ func (db *DB) AddIntegration(ctx context.Context, name, integrationType, url, ap
 		enabledInt = 1
 	}
 
-	query := `INSERT INTO integrations (name, type, url, api_key_encrypted, enabled) VALUES (?, ?, ?, ?, ?)`
-	_, err = db.conn.ExecContext(ctx, query, name, integrationType, url, encryptedKey, enabledInt)
+	ucSeasonsInt := 0
+	if unmonitorCompletedSeasons {
+		ucSeasonsInt = 1
+	}
+
+	query := `INSERT INTO integrations (name, type, url, api_key_encrypted, enabled, unmonitor_completed_seasons) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err = db.conn.ExecContext(ctx, query, name, integrationType, url, encryptedKey, enabledInt, ucSeasonsInt)
 	return err
 }
 
@@ -30,7 +35,7 @@ func (db *DB) ListIntegrations(ctx context.Context) ([]Integration, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	query := `SELECT id, name, type, url, api_key_encrypted, enabled FROM integrations ORDER BY id ASC`
+	query := `SELECT id, name, type, url, api_key_encrypted, enabled, unmonitor_completed_seasons FROM integrations ORDER BY id ASC`
 	rows, err := db.conn.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -42,8 +47,9 @@ func (db *DB) ListIntegrations(ctx context.Context) ([]Integration, error) {
 		var i Integration
 		var encryptedKey []byte
 		var enabledInt int
+		var ucSeasonsInt int
 
-		if err := rows.Scan(&i.ID, &i.Name, &i.Type, &i.URL, &encryptedKey, &enabledInt); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Type, &i.URL, &encryptedKey, &enabledInt, &ucSeasonsInt); err != nil {
 			return nil, err
 		}
 
@@ -54,6 +60,7 @@ func (db *DB) ListIntegrations(ctx context.Context) ([]Integration, error) {
 
 		i.APIKey = string(decryptedKey)
 		i.Enabled = enabledInt == 1
+		i.UnmonitorCompletedSeasons = ucSeasonsInt == 1
 		integrations = append(integrations, i)
 	}
 
@@ -71,7 +78,7 @@ func (db *DB) RemoveIntegration(ctx context.Context, id int) error {
 }
 
 // UpdateIntegration modifies an existing integration.
-func (db *DB) UpdateIntegration(ctx context.Context, id int, name, integrationType, url, apiKey string, enabled bool) error {
+func (db *DB) UpdateIntegration(ctx context.Context, id int, name, integrationType, url, apiKey string, enabled, unmonitorCompletedSeasons bool) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -85,8 +92,13 @@ func (db *DB) UpdateIntegration(ctx context.Context, id int, name, integrationTy
 		enabledInt = 1
 	}
 
-	query := `UPDATE integrations SET name = ?, type = ?, url = ?, api_key_encrypted = ?, enabled = ? WHERE id = ?`
-	_, err = db.conn.ExecContext(ctx, query, name, integrationType, url, encryptedKey, enabledInt, id)
+	ucSeasonsInt := 0
+	if unmonitorCompletedSeasons {
+		ucSeasonsInt = 1
+	}
+
+	query := `UPDATE integrations SET name = ?, type = ?, url = ?, api_key_encrypted = ?, enabled = ?, unmonitor_completed_seasons = ? WHERE id = ?`
+	_, err = db.conn.ExecContext(ctx, query, name, integrationType, url, encryptedKey, enabledInt, ucSeasonsInt, id)
 	return err
 }
 

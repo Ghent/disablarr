@@ -5,8 +5,8 @@ stages:
   - build
 
 variables:
-  GO_VERSION: "1.24.0"
-  NODE_VERSION: "22"
+  GO_VERSION: "1.25.0"
+  NODE_VERSION: "22.14.0"
   GOLANGCI_LINT_VERSION: "v2.1.2"
   # Cache Go module downloads and build cache across jobs
   GOPATH: "$CI_PROJECT_DIR/.cache/go"
@@ -56,7 +56,7 @@ vuln:
   image: golang:${GO_VERSION}-alpine
   <<: *go_cache
   before_script:
-    - go install golang.org/x/vuln/cmd/govulncheck@latest
+    - go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
   script:
     - govulncheck ./...
 

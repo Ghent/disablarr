@@ -3,12 +3,15 @@ package web
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"gitlab.com/starshadow/software/disablarr/internal/crypto"
 )
 
 // jwtHeader is the fixed header for our HS256 tokens.
@@ -48,7 +51,8 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Password != s.masterKey {
+	_, attemptAuthKey := crypto.DeriveKeys(req.Password)
+	if subtle.ConstantTimeCompare(s.authKey, attemptAuthKey) != 1 {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		return
 	}
@@ -92,7 +96,7 @@ func (s *Server) signJWT(claims jwtClaims) (string, error) {
 	encodedPayload := base64URLEncode(payload)
 	signingInput := jwtHeader + "." + encodedPayload
 
-	mac := hmac.New(sha256.New, []byte(s.masterKey))
+	mac := hmac.New(sha256.New, s.authKey)
 	mac.Write([]byte(signingInput))
 	signature := base64URLEncode(mac.Sum(nil))
 
@@ -107,7 +111,7 @@ func (s *Server) verifyJWT(tokenStr string) (jwtClaims, error) {
 	}
 
 	signingInput := parts[0] + "." + parts[1]
-	mac := hmac.New(sha256.New, []byte(s.masterKey))
+	mac := hmac.New(sha256.New, s.authKey)
 	mac.Write([]byte(signingInput))
 	expectedSig := base64URLEncode(mac.Sum(nil))
 

@@ -13,27 +13,35 @@ import (
 	"gitlab.com/starshadow/software/disablarr/internal/crypto"
 	"gitlab.com/starshadow/software/disablarr/internal/db"
 	"gitlab.com/starshadow/software/disablarr/internal/engine"
-	disablarrssh "gitlab.com/starshadow/software/disablarr/internal/ssh"
-	disablarrtui "gitlab.com/starshadow/software/disablarr/internal/tui"
+	"gitlab.com/starshadow/software/disablarr/internal/logger"
 	"gitlab.com/starshadow/software/disablarr/internal/web"
 )
 
-func main() {
-	// Setup structured JSON logging to os.Stdout, also captured in the TUI log ring buffer.
-	logs := disablarrtui.NewLogBuffer(500)
-	logger := slog.New(disablarrtui.NewRingHandler(logs))
-	slog.SetDefault(logger)
+// Build-time metadata injected via -ldflags.
+var (
+	version   = "dev"
+	commit    = "unknown"
+	buildDate = "unknown"
+)
 
-	slog.Info("Starting Disablarr Daemon")
+func main() {
+	// Setup structured JSON logging to os.Stdout, also captured in the log ring buffer.
+	logs := logger.NewLogBuffer(500)
+	syslogger := slog.New(logger.NewRingHandler(logs))
+	slog.SetDefault(syslogger)
+
+	slog.Info("Starting Disablarr Daemon", "version", version, "commit", commit, "built", buildDate)
 
 	// 1. Check for MASTER_KEY
 	masterKey := os.Getenv("DISABLARR_MASTER_KEY")
-	if len(masterKey) != 64 {
-		slog.Error("Fatal: DISABLARR_MASTER_KEY environment variable must be a 64-character hex string (32 bytes). Exiting.")
+	if masterKey == "" {
+		slog.Error("Fatal: DISABLARR_MASTER_KEY environment variable is missing. Exiting.")
 		os.Exit(1)
 	}
 
-	cm, err := crypto.NewCryptoManager(masterKey)
+	dbKey, authKey := crypto.DeriveKeys(masterKey)
+
+	cm, err := crypto.NewCryptoManager(dbKey)
 	if err != nil {
 		slog.Error("Failed to initialize crypto manager", "error", err)
 		os.Exit(1)
@@ -64,19 +72,6 @@ func main() {
 
 	go eng.Run(ctx)
 
-	// 5. Start SSH Dashboard
-	sshServer, err := disablarrssh.New(database, masterKey, 22222, dataPath, eng.TriggerNow, logs)
-	if err != nil {
-		slog.Error("Failed to initialize SSH server", "error", err)
-		os.Exit(1)
-	}
-
-	go func() {
-		if err := sshServer.Start(); err != nil {
-			slog.Error("SSH server error", "error", err)
-		}
-	}()
-
 	// 6. Start Web UI Server
 	webPort := 7812
 	if portStr := os.Getenv("DISABLARR_WEB_PORT"); portStr != "" {
@@ -91,7 +86,7 @@ func main() {
 		basePath = "/" + basePath
 	}
 
-	webServer := web.New(database, eng, logs, masterKey, webPort, basePath, eng.TriggerNow)
+	webServer := web.New(database, eng, logs, authKey, webPort, basePath, eng.TriggerNow)
 	go func() {
 		if err := webServer.Start(); err != nil {
 			slog.Error("Web server error", "error", err)
@@ -102,14 +97,11 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	slog.Info(fmt.Sprintf("Disablarr running. SSH: ssh -p 22222 admin@localhost | Web: http://localhost:%d%s", webPort, basePath))
+	slog.Info(fmt.Sprintf("Disablarr running. Web API: http://localhost:%d%s", webPort, basePath))
 	<-done
 
 	slog.Info("Shutting down...")
 	cancel() // Stop engine
-	if err := sshServer.Stop(context.Background()); err != nil {
-		slog.Error("Error stopping SSH server", "error", err)
-	}
 	if err := webServer.Stop(context.Background()); err != nil {
 		slog.Error("Error stopping Web server", "error", err)
 	}

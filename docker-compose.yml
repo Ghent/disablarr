@@ -1,20 +1,18 @@
 services:
   disablarr:
-    image: starshadow/disablarr:latest
+    image: disablarr:latest
     build: .
     container_name: disablarr
     user: "${PUID:-1000}:${PGID:-1000}"
     restart: unless-stopped
     environment:
-      # Generate a truly random 64-character hex string (32 bytes)
-      # e.g., using `openssl rand -hex 32`
-      - DISABLARR_MASTER_KEY=2a033242758c972c137057f9b465fc79b521944e1a6dac67892ff21c97b606bf
+      # Use any strong master password. It will be secure hashed via Argon2id
+      # to derive your database encryption and frontend authentication tokens.
+      - DISABLARR_MASTER_KEY=MyStrongPassword123!
       # Optional: set a base path for reverse proxy subpath deployments
       # e.g., DISABLARR_BASE_PATH=/disablarr
       # - DISABLARR_BASE_PATH=
     ports:
-      # Exposes SSH on the host at port 22222 mapping to 22222 container
-      - 22222:22222
       # Exposes Web UI on the host at port 7812
       - 7812:7812
     volumes:

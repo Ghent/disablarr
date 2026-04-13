@@ -1,0 +1,1 @@
+import{v as s}from"./q-D2pOCRrz.js";import{x as c}from"./q-D2pOCRrz.js";const a=({track:e})=>{const[o,l]=s();e(()=>l.value),o.value&&(o.value.scrollTop=o.value.scrollHeight)};export{c as _hW,a as s_hs55Cc65pvA};

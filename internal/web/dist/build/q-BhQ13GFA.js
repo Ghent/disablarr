@@ -1,0 +1,1 @@
+import{_ as e}from"./q-BKZ00VYc.js";import{m as i,c as o}from"./q-D2pOCRrz.js";const a=i(o(()=>e(()=>import("./q-zFUFaHo0.js").then(t=>t.i),[]),"s_Nf91gNjp4HE")),_={title:"Settings | Disablarr"};export{a as default,_ as head};

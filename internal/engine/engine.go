@@ -158,14 +158,16 @@ func (e *Engine) executeCycle(ctx context.Context) {
 		client := arr.NewClient(integration.URL, integration.APIKey)
 
 		if strings.ToLower(integration.Type) == "sonarr" {
-			e.processSonarr(ctx, client, integration.Name, setting.DryRun)
+			e.processSonarr(ctx, client, integration, setting.DryRun)
 		} else if strings.ToLower(integration.Type) == "radarr" {
 			e.processRadarr(ctx, client, integration.Name, setting.DryRun)
 		}
 	}
 }
 
-func (e *Engine) processSonarr(ctx context.Context, client *arr.Client, identity string, dryRun bool) {
+func (e *Engine) processSonarr(ctx context.Context, client *arr.Client, integration db.Integration, dryRun bool) {
+	identity := integration.Name
+
 	// 1. Ensure our operational tags exist so we can grab their IDs
 	disablarrTagID, err := client.EnsureTag(ctx, "disablarr")
 	if err != nil {
@@ -193,8 +195,24 @@ func (e *Engine) processSonarr(ctx context.Context, client *arr.Client, identity
 			continue
 		}
 
-		// Rule 2: Must be "ended"
-		if strings.ToLower(s.Status) != "ended" {
+		seasonsModified := false
+		if integration.UnmonitorCompletedSeasons {
+			for i, season := range s.Seasons {
+				if season.SeasonNumber == 0 || !season.Monitored {
+					continue
+				}
+
+				if season.Statistics.EpisodeFileCount == season.Statistics.TotalEpisodeCount && season.Statistics.TotalEpisodeCount > 0 {
+					s.Seasons[i].Monitored = false
+					seasonsModified = true
+				}
+			}
+		}
+
+		seriesEnded := strings.ToLower(s.Status) == "ended"
+
+		// Rule 2: Must be "ended" or seasons have been modified
+		if !seriesEnded && !seasonsModified {
 			continue
 		}
 
@@ -211,13 +229,15 @@ func (e *Engine) processSonarr(ctx context.Context, client *arr.Client, identity
 		}
 
 		if dryRun {
-			slog.Info("[DRY RUN] Would unmonitor series", "integration", identity, "series", s.Title)
+			slog.Info("[DRY RUN] Would unmonitor series/seasons", "integration", identity, "series", s.Title, "seriesEnded", seriesEnded, "seasonsModified", seasonsModified)
 			processedCount++
 			continue
 		}
 
 		// Action: Unmonitor and tag
-		s.Monitored = false
+		if seriesEnded {
+			s.Monitored = false
+		}
 
 		// Append disablarr tag if not already there
 		hasDisablarr := false
@@ -235,7 +255,7 @@ func (e *Engine) processSonarr(ctx context.Context, client *arr.Client, identity
 		if err != nil {
 			slog.Error("Sonarr failed to update series", "integration", identity, "series", s.Title, "error", err)
 		} else {
-			slog.Info("Sonarr successfully unmonitored series", "integration", identity, "series", s.Title)
+			slog.Info("Sonarr successfully unmonitored series/seasons", "integration", identity, "series", s.Title, "seriesEnded", seriesEnded, "seasonsModified", seasonsModified)
 			processedCount++
 		}
 	}
